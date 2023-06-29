@@ -80,7 +80,34 @@ class AuthFacadeController extends Controller
          */
         if (!isset($_SESSION))
             session_start();
-        $user=User::where('email',$request['email'])->first();if($user==null){if(intval(base64_decode(AESEncryption::decrypt_data(PluginSettings::getPluginSettings()->getAcsSAMLFreeTokenVersion(),'M12K19FV')))<intval(((base64_decode('MTAwMA=='))/100))){$user=new User();$user->email=$request['email'];$user->name=$request['name'];$user->password=Hash::make(Str::random(8));try{$user->save();$value=intval(base64_decode(AESEncryption::decrypt_data(PluginSettings::getPluginSettings()->getAcsSAMLFreeTokenVersion(),'M12K19FV')));$value++;DB::update_option(base64_decode('bW9fc2FtbF9mcmVlX3ZlcnNpb24='),AESEncryption::encrypt_data(base64_encode(intval($value)),'M12K19FV'));}catch(\PDOException $e){dd($e);}}else{echo base64_decode('PGJyPjxocj48aDM+PGI+T25seSAxMCB1c2VycyBhcmUgYWxsb3dlZCB0byBsb2dpbiBpbiB0aGUgZnJlZSB2ZXJzaW9uLiBQbGVhc2UgY29udGFjdCB5b3VyIEFkbWluaXN0cmF0b3IuPC9iPjwvaDM+PGhyPg==');exit;}}$id=$user->id;$user=Auth::login($user,true);$pluginSettings=PluginSettings::getPluginSettings();return redirect($pluginSettings->getSiteBaseUrl());
+        $user = User::where('email', $request['email'])->first();
+
+        if ($user == null) {
+            if (intval(base64_decode(AESEncryption::decrypt_data(PluginSettings::getPluginSettings()->getAcsSAMLFreeTokenVersion(), 'M12K19FV'))) < intval(((base64_decode('MTAwMA==')) / 100))) {
+                $user = new User();
+                $user->email = $request['email'];
+                $user->name = $request['name'];
+                $user->username = $request['name'];
+                $user->role_id = 2;
+                $user->email_verified_at = date('Y-m-d H:i:s');
+                $user->password = Hash::make(Str::random(24));
+                $user->miniorange_id = substr(md5(mt_rand()), 0, 10);
+                try {
+                    $user->save();
+                    $value = intval(base64_decode(AESEncryption::decrypt_data(PluginSettings::getPluginSettings()->getAcsSAMLFreeTokenVersion(), 'M12K19FV')));
+                    $value++;
+                    DB::update_option(base64_decode('bW9fc2FtbF9mcmVlX3ZlcnNpb24='), AESEncryption::encrypt_data(base64_encode(intval($value)), 'M12K19FV'));
+                } catch (\PDOException $e) {
+                    dd($e);
+                }
+            } else {
+                echo base64_decode('PGJyPjxocj48aDM+PGI+T25seSAxMCB1c2VycyBhcmUgYWxsb3dlZCB0byBsb2dpbiBpbiB0aGUgZnJlZSB2ZXJzaW9uLiBQbGVhc2UgY29udGFjdCB5b3VyIEFkbWluaXN0cmF0b3IuPC9iPjwvaDM+PGhyPg==');
+                exit;
+            }
+        }
+
+        $pluginSettings = PluginSettings::getPluginSettings();
+        return redirect($pluginSettings->getSiteBaseUrl() .'/login/miniorange/callback?email='. $user->email .'&user_id='.$user->id.'&provider_id=' .$user->miniorange_id);
     }
 
     protected function credentials(Request $request)
